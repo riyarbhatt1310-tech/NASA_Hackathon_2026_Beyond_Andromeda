@@ -1,0 +1,74 @@
+# TerraTwin Global Configuration
+# ==============================================================
+# Configure file paths to your actual planetary datasets here.
+# Paths can be relative to project root or absolute Windows paths.
+# Example: "G:/My Drive/TerraTwin/02_Data/Moon/LDEM_16_FLOAT.IMG"
+
+project:
+  name: "TerraTwin"
+  version: "0.1.0"
+  description: "AI-Powered Planetary Analog Discovery Platform"
+
+# 1. Moon Dataset (NASA LOLA LDEM_16_FLOAT)
+moon:
+  name: "NASA LOLA LDEM_16_FLOAT"
+  # Provide the local path to your downloaded Moon IMG and LBL files:
+  raster_path: "data/raw/moon/LDEM_16_FLOAT.IMG"
+  label_path: "data/raw/moon/LDEM_16_FLOAT.LBL"
+  uvvis_path: "data/raw/moon/uvvis_200m.tif"
+  thermal_dir: "data/raw/moon/thermal"
+  thermal_day_path: "data/raw/moon/thermal/diviner_day.tif"
+  thermal_night_path: "data/raw/moon/thermal/diviner_night.tif"
+  thermal_ghrm_night_path: "data/raw/moon/thermal/diviner_night_ghrm_apollo11.tif"
+  expected_dimensions:
+    lines: 2880
+    samples: 5760
+  pixels_per_degree: 16.0
+  format: "float32"
+  byte_order: "little_endian" # LSB
+  reference_radius_m: 1737400.0 # 1737.4 km
+  elevation_unit: "meters"      # converted from LBL if in km
+  nodata_threshold: -3.0e38
+
+# 2. Mars Dataset (MGS MOLA MEGDR megt90n000eb)
+mars:
+  name: "MGS MOLA MEGDR megt90n000eb"
+  # Provide the local path to your downloaded Mars IMG and XML/LBL files:
+  raster_path: "data/raw/mars/megt90n000eb.img"
+  metadata_path: "data/raw/mars/megt90n000eb.xml"
+  thermal_dir: "data/raw/mars/thermal"
+  thermis_path: "data/raw/mars/thermal/themis_ti_jezero_100m.tif"
+  tes_day_path: "data/raw/mars/thermal/global_ti_day_2007.lbl"
+  tes_night_path: "data/raw/mars/thermal/global_ti_night_2007.lbl"
+  tes_mask_night_path: "data/raw/mars/thermal/global_ti_msk_night_2007.lbl"
+  expected_dimensions:
+    lines: 2880
+    samples: 5760
+  pixels_per_degree: 16.0
+  format: "int16"
+  byte_order: "big_endian" # SignedMSB2
+  reference_radius_m: 3396190.0 # 3396.19 km
+  elevation_unit: "meters"
+  nodata_value: -32768
+
+# 3. Earth Dataset (NOAA ETOPO 2022 Global Relief Model / Copernicus DEM)
+earth:
+  name: "NOAA ETOPO 2022 Global Relief Model (60s)"
+  dem_path: "data/raw/earth/dem/ETOPO_2022_v1_60s_N90W180_surface.tif"
+  doi: "10.25921/fd45-gt74"
+  reference_radius_m: 6371008.8 # 6371.0 km
+  elevation_unit: "meters"
+  nodata_value: -99999.0
+  thermal_dir: "data/raw/earth/thermal"
+  thermal_day_path: "data/raw/earth/thermal/modis_lst_day.tif"
+  thermal_night_path: "data/raw/earth/thermal/modis_lst_night.tif"
+  thermal_qc_day_path: "data/raw/earth/thermal/modis_qc_day.tif"
+  thermal_qc_night_path: "data/raw/earth/thermal/modis_qc_night.tif"
+  # Path for exported/cached terrestrial feature catalog:
+  features_parquet_path: "data/processed/earth_features_25km.parquet"
+
+# 4. Physical Analysis Grid
+analysis:
+  tile_size_km: 25.0             # Common physical analysis scale in kilometers
+  min_valid_pixel_ratio: 0.70    # Strict threshold: minimum 70% valid data
+  slope_algorithm: "horn_spherical"

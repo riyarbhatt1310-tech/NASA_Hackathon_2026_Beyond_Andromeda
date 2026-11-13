@@ -1,0 +1,40 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE / Editor configuration
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Raw planetary raster data files (too large for GitHub >100MB limit)
+data/raw/
+*.img
+*.IMG
+*.tif
+*.tiff
+*.nc
+*.nc4
+*.grd
+*.zip
+*.tar.gz
+*.tgz
+
+# Scratch exploratory scripts
+scratch/

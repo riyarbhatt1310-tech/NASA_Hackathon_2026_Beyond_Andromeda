@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TerraTwin: Multi-Parameter Planetary Analog Discovery Platform</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS & JS for NASA Trek WMTS & Cartography -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Three.js & OrbitControls for Realistic 3D Planetary Globe -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Chart.js for 5-Axis Radar Profiles -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- TerraTwin Scientific Interface Stylesheet -->
+  <link rel="stylesheet" href="/static/css/terratwin.css">
+</head>
+<body>
+
+  <!-- Dynamic Cosmic Starfield Background -->
+  <div class="space-background">
+    <canvas id="starsCanvas" class="stars-canvas"></canvas>
+  </div>
+
+  <!-- ========================================================================
+       OPENING SCREEN: Cinematic Deep Space Orbit & Earth Horizon
+       Realistic 3D curved Earth limb with atmospheric glow and scientific telemetry
+       ======================================================================== -->
+  <div id="introScreen" class="intro-screen">
+    <canvas id="introEarthCanvas" class="intro-earth-canvas"></canvas>
+    
+    <div class="intro-overlay-backdrop"></div>
+
+    <div class="intro-content-container">
+      <div class="intro-brand-badge">
+        <svg class="intro-logo-svg" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 2"/>
+          <circle cx="16" cy="16" r="8" fill="url(#introLogoGrad)"/>
+          <ellipse cx="16" cy="16" rx="14" ry="5" stroke="#38bdf8" stroke-width="1.5" transform="rotate(-25 16 16)"/>
+          <defs>
+            <radialGradient id="introLogoGrad" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#bae6fd"/>
+              <stop offset="60%" stop-color="#0284c7"/>
+              <stop offset="100%" stop-color="#082f49"/>
+            </radialGradient>
+          </defs>
+        </svg>
+        <span class="intro-badge-text">NASA Space Apps 2026 // Planetary Science Initiative</span>
+      </div>
+
+      <h1 class="intro-headline">TerraTwin</h1>
+      <p class="intro-tagline">Explore Worlds. Discover Earth's Planetary Connections.</p>
+      
+      <p class="intro-description">
+        A multi-mission planetary analog platform bridging the Moon, Mars, and Earth.
+        Correlating high-resolution geomorphometry, mineralogy, thermophysics, and volatiles across 25 km equal-area planetary tiles.
+      </p>
+
+      <!-- Real Scientific System Initialization Telemetry -->
+      <div class="intro-telemetry-box">
+        <div class="intro-telemetry-header">
+          <span>SYSTEM INITIALIZATION TELEMETRY</span>
+          <span id="introStatusPct" class="intro-status-pct">100% READY</span>
+        </div>
+        <div class="intro-progress-bar-wrap">
+          <div id="introProgressBar" class="intro-progress-bar"></div>
+        </div>
+        <div class="intro-telemetry-grid">
+          <div class="intro-telem-item">
+            <span class="telem-dot dot-active"></span>
+            <span class="telem-label">3D Planetary Core:</span>
+            <span class="telem-val" id="introTelemWebGL">WebGL / Three.js Online</span>
+          </div>
+          <div class="intro-telem-item">
+            <span class="telem-dot dot-active"></span>
+            <span class="telem-label">Orbital Mosaics:</span>
+            <span class="telem-val" id="introTelemTextures">LOLA • MOLA • Blue Marble</span>
+          </div>
+          <div class="intro-telem-item">
+            <span class="telem-dot dot-active"></span>
+            <span class="telem-label">Terrestrial Baseline:</span>
+            <span class="telem-val" id="introTelemCatalog">128 Analog Cells Cached</span>
+          </div>
+          <div class="intro-telem-item">
+            <span class="telem-dot dot-active"></span>
+            <span class="telem-label">Scientific APIs:</span>
+            <span class="telem-val" id="introTelemAPI">FastAPI Remote Sensing Ready</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opening Actions -->
+      <div class="intro-actions-row">
+        <button id="btnEnterPlatform" class="btn-intro-enter" onclick="dismissIntroScreen()">
+          <span>ENTER PLATFORM // SELECT MODE</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+        <button id="btnSkipIntro" class="btn-intro-skip" onclick="dismissIntroScreen()">
+          Skip Intro
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Scientific Mission Control Navigation Bar -->
+  <header class="top-nav">
+    <div class="nav-brand" onclick="showLanding()">
+      <svg class="nav-logo-icon" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 2"/>
+        <circle cx="16" cy="16" r="8" fill="url(#logoGrad)"/>
+        <ellipse cx="16" cy="16" rx="14" ry="5" stroke="#38bdf8" stroke-width="1.5" transform="rotate(-25 16 16)"/>
+        <defs>
+          <radialGradient id="logoGrad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#bae6fd"/>
+            <stop offset="60%" stop-color="#0284c7"/>
+            <stop offset="100%" stop-color="#082f49"/>
+          </radialGradient>
+        </defs>
+      </svg>
+      <div>
+        <h1 class="nav-title">TerraTwin</h1>
+      </div>
+      <span class="nav-badge">NASA Space Apps 2026</span>
+    </div>
+
+    <!-- Central Mode Switcher (Explore Mode vs Compare Mode) -->
+    <div class="nav-mode-switcher">
+      <button class="nav-mode-pill active" id="navModeExplore" onclick="openExploreMode()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        <span>Explore Mode</span>
+      </button>
+      <button class="nav-mode-pill" id="navModeCompare" onclick="openCompareMode()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <span>Compare Analogs</span>
+      </button>
+    </div>
+
+    <!-- Quick Location Search Bar -->
+    <div class="nav-search-wrap">
+      <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" id="locationSearchInput" class="nav-search-input" placeholder="Search target or analog (e.g. Apollo, Jezero, Sudbury)..." autocomplete="off" />
+      <div id="locationSearchDropdown" class="nav-search-dropdown hidden"></div>
+    </div>
+
+    <!-- Planet Selection Navigation Pills -->
+    <nav class="planet-selector-bar">
+      <button class="planet-pill" id="navBtn_earth" onclick="selectPlanet('earth')">
+        <span class="planet-icon-dot dot-earth"></span>
+        <span>Earth</span>
+      </button>
+      <button class="planet-pill active-moon" id="navBtn_moon" onclick="selectPlanet('moon')">
+        <span class="planet-icon-dot dot-moon"></span>
+        <span>Moon</span>
+      </button>
+      <button class="planet-pill" id="navBtn_mars" onclick="selectPlanet('mars')">
+        <span class="planet-icon-dot dot-mars"></span>
+        <span>Mars</span>
+      </button>
+    </nav>
+
+    <!-- Right System Health & Analog Comparison Trigger -->
+    <div class="nav-right-actions">
+      <div id="systemHealth" class="system-status-indicator">
+        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+        <span>Operational (128 Earth Analog Cells Cached)</span>
+      </div>
+      <button class="btn-nav-compare" id="btnHeaderCompare" onclick="openComparisonDrawer()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <span>Earth Analogs Console</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Scientific Governance Disclaimer Notification Strip -->
+  <div class="disclaimer-banner">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+      <line x1="12" y1="9" x2="12" y2="13"></line>
+      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>
+    <span><strong>Scientific Notice:</strong> Relative similarity scores reflect comparative remote-sensing physics across 5 parameter groups. They do NOT imply human habitability, biological potential, or exact environmental equivalence.</span>
+  </div>
+
+  <!-- ========================================================================
+       AREA 1: Realistic 3D Planetary Showcase Landing Page
+       ======================================================================== -->
+  <main id="landingView" class="landing-view">
+    <div class="landing-hero">
+      <div class="landing-subtitle-badge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        <span>NASA Space Apps 2026 // Orbital Remote Sensing Platform</span>
+      </div>
+
+      <h2 class="landing-title">Planetary Science & Terrestrial Analog Exploration</h2>
+
+      <p class="landing-description">
+        TerraTwin bridges Earth, the Moon, and Mars through multi-mission remote sensing.
+        Quantifying high-resolution geomorphometry, mineralogy, thermophysics, and volatiles across 25 km equal-area planetary tiles.
+      </p>
+
+      <!-- ========================================================================
+           TWO PRIMARY EXPLORATION & DISCOVERY MODES
+           Prominent side-by-side cards visible above the fold on desktop
+           ======================================================================== -->
+      <div class="primary-modes-container">
+        <div class="primary-modes-grid">
+          
+          <!-- OPTION 1: EXPLORE -->
+          <div class="mode-hero-card mode-explore-card" onclick="openExploreMode('moon')">
+            <div class="mode-card-badge badge-mode-1">
+              <span class="mode-badge-num">01</span>
+              <span>INTERACTIVE EXPLORATION</span>
+            </div>
+            <div class="mode-card-header">
+              <div class="mode-icon-circle icon-explore-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="mode-card-title">Planetary Explorer</h3>
+                <p class="mode-card-headline">Discover the environmental and geological characteristics of planetary locations.</p>
+              </div>
+            </div>
+
+            <p class="mode-card-description">
+              Inspect real multi-mission remote sensing data across the Moon, Mars, and Earth. Navigate 3D planetary globes, high-resolution NASA Trek basemaps, and examine detailed geomorphometry, mineralogy, thermophysics, and volatiles.
+            </p>
+
+            <div class="mode-features-list">
+              <div class="mode-feature-item">
+                <span class="feat-bullet">◈</span>
+                <span><strong>3D Orbital Navigation:</strong> LOLA (Moon), MOLA (Mars), Blue Marble (Earth)</span>
+              </div>
+              <div class="mode-feature-item">
+                <span class="feat-bullet">◈</span>
+                <span><strong>NASA Trek 2D Basemaps:</strong> Multi-resolution cartographic tiling</span>
+              </div>
+              <div class="mode-feature-item">
+                <span class="feat-bullet">◈</span>
+                <span><strong>6 Parameter Groups:</strong> Quantitative slope, roughness, relief, temperatures & volatiles</span>
+              </div>
+            </div>
+
+            <button class="btn-launch-mode btn-launch-explore" onclick="event.stopPropagation(); openExploreMode('moon');">
+              <span>Launch Planetary Explorer</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <!-- OPTION 2: COMPARE & FIND ANALOGS -->
+          <div class="mode-hero-card mode-compare-card" onclick="openCompareMode('moon')">
+            <div class="mode-card-badge badge-mode-2">
+              <span class="mode-badge-num">02</span>
+              <span>ANALOG DISCOVERY ENGINE</span>
+            </div>
+            <div class="mode-card-header">
+              <div class="mode-icon-circle icon-compare-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  <line x1="11" y1="8" x2="11" y2="14"></line>
+                  <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+              </div>
+              <div>
+                <h3 class="mode-card-title">Compare & Find Analogs</h3>
+                <p class="mode-card-headline">Find places on Earth that share similar geological and environmental characteristics with locations on other worlds.</p>
+              </div>
+            </div>
+
+            <p class="mode-card-description">
+              Quantify multi-parameter scientific similarity against 128 globally characterized terrestrial analog cells. Filter by research requirements, adjust parameter weights, and inspect 5-axis radar profiles.
+            </p>
+
+            <div class="mode-features-list">
+              <div class="mode-feature-item">
+                <span class="feat-bullet">◈</span>
+                <span><strong>128 Characterized Earth Sites:</strong> Impact craters, hyper-arid deserts, basalt plains</span>
+              </div>
+              <div class="mode-feature-item">
+                <span class="feat-bullet">◈</span>
+                <span><strong>Configurable Weights & Safeguards:</strong> Enforced minimum valid coverage thresholds</span>
+              </div>
+              <div class="mode-feature-item">
+                <span class="feat-bullet">◈</span>
+                <span><strong>5-Axis Radar Profiles:</strong> Missing data rendered as gaps, never zeros</span>
+              </div>
+            </div>
+
+            <button class="btn-launch-mode btn-launch-compare" onclick="event.stopPropagation(); openCompareMode('moon');">
+              <span>Launch Analog Discovery</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="landing-showcase-divider">
+        <span class="divider-line"></span>
+        <span class="divider-label">OR CHOOSE A PLANETARY BODY TO EXPLORE DIRECTLY</span>
+        <span class="divider-line"></span>
+      </div>
+
+      <button class="btn-begin-exploration" onclick="beginExploration('moon')">
+        <span>BEGIN EXPLORATION // MISSION CONTROL</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+
+      <!-- Three Featured Realistic 3D Planetary Showcase Cards -->
+      <div class="planet-cards-grid">
+        <!-- Earth Card with Realistic 3D Blue Marble -->
+        <div class="planet-card card-earth" onclick="beginExploration('earth')">
+          <div class="showcase-globe-wrap">
+            <canvas id="canvasEarthShowcase" class="showcase-globe-canvas"></canvas>
+          </div>
+          <div>
+            <h3 class="planet-card-title">Earth</h3>
+            <span class="planet-card-role">Terrestrial Reference Baseline</span>
+          </div>
+          <p class="planet-card-desc">
+            128 characterized planetary analog sites across hyper-arid deserts, complex impact craters, volcanic basalt plains, and polar permafrost.
+          </p>
+          <div class="planet-card-meta">
+            MODIS LST • GLiM Lithology • JRC Water
+          </div>
+        </div>
+
+        <!-- Moon Card with Realistic 3D LOLA Lunar Globe -->
+        <div class="planet-card card-moon" onclick="beginExploration('moon')">
+          <div class="showcase-globe-wrap">
+            <canvas id="canvasMoonShowcase" class="showcase-globe-canvas"></canvas>
+          </div>
+          <div>
+            <h3 class="planet-card-title">Moon</h3>
+            <span class="planet-card-role">Lunar Cold Traps & Mare Basalts</span>
+          </div>
+          <p class="planet-card-desc">
+            Airless regolith evolution, cryogenic permanently shadowed polar craters, and titanium-rich flood basalt plains.
+          </p>
+          <div class="planet-card-meta">
+            LRO LOLA Topography • Diviner Radiometer • LP-NS
+          </div>
+        </div>
+
+        <!-- Mars Card with Realistic 3D Viking/MOLA Mars Globe -->
+        <div class="planet-card card-mars" onclick="beginExploration('mars')">
+          <div class="showcase-globe-wrap">
+            <canvas id="canvasMarsShowcase" class="showcase-globe-canvas"></canvas>
+          </div>
+          <div>
+            <h3 class="planet-card-title">Mars</h3>
+            <span class="planet-card-role">Paleolakes & Volcanic Provinces</span>
+          </div>
+          <p class="planet-card-desc">
+            Noachian lacustrine delta systems, massive shield volcano calderas, and shallow subsurface ground ice sheets.
+          </p>
+          <div class="planet-card-meta">
+            MGS MOLA • THEMIS Thermal • Odyssey GRS
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================================================
+       AREA 3: Planet Exploration Workspace (Hero)
+       ======================================================================== -->
+  <section id="explorationView" class="exploration-view hidden">
+
+    <!-- Left Floating Panel: Planet Telemetry & Curated Sites -->
+    <aside class="panel-left-sites">
+      <!-- Planet Telemetry Overview Card -->
+      <div class="telemetry-card">
+        <div class="telemetry-planet-title">
+          <span id="telemetryPlanetName">Moon (Luna)</span>
+        </div>
+        <div class="telemetry-subtitle" id="telemetryPlanetRole">
+          Lunar Cold Traps & Mare Basalts
+        </div>
+        <div class="telemetry-grid">
+          <div class="telemetry-item">
+            <div class="telemetry-label">Radius</div>
+            <div class="telemetry-val" id="telemRadius">1,737.4 km</div>
+          </div>
+          <div class="telemetry-item">
+            <div class="telemetry-label">Gravity</div>
+            <div class="telemetry-val" id="telemGravity">1.62 m/s²</div>
+          </div>
+          <div class="telemetry-item">
+            <div class="telemetry-label">Atmosphere</div>
+            <div class="telemetry-val" id="telemAtmosphere">&lt; 10⁻¹² bar</div>
+          </div>
+          <div class="telemetry-item">
+            <div class="telemetry-label">Temp Range</div>
+            <div class="telemetry-val" id="telemTempRange">40 - 395 K</div>
+          </div>
+        </div>
+        <div style="margin-top: 8px; font-size: 0.72rem; color: var(--text-muted);">
+          <strong>Orbital Missions:</strong> <span id="telemMissions">LRO LOLA, Diviner, LP-NS</span>
+        </div>
+      </div>
+
+      <!-- Curated Reference Sites List -->
+      <div>
+        <div class="panel-section-title">
+          <span>Curated Mission Sites</span>
+          <span style="font-size:0.68rem; color:var(--text-muted); font-family:var(--font-sans); text-transform:none;">Click to Inspect</span>
+        </div>
+        <div id="curatedSitesList" class="sites-list"></div>
+      </div>
+
+      <!-- Manual Coordinates Input Card -->
+      <div class="manual-coords-card">
+        <div style="font-size: 0.74rem; font-weight: 600; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.03em;">
+          Custom Planetary Coordinates
+        </div>
+        <div class="coords-inputs-row">
+          <div class="coord-field">
+            <label for="inputLat">Latitude (-90° to +90°)</label>
+            <input type="number" id="inputLat" step="0.01" min="-90" max="90" value="0.67" />
+          </div>
+          <div class="coord-field">
+            <label for="inputLon">Longitude (-180° to +180°)</label>
+            <input type="number" id="inputLon" step="0.01" value="23.47" />
+          </div>
+        </div>
+        <button class="btn-extract-tile" id="btnExtractTile" onclick="handleManualCoordinateInput()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          Extract Tile Features
+        </button>
+      </div>
+    </aside>
+
+    <!-- Center Hero Viewport: 3D Planetary Globe & NASA 2D Map -->
+    <main class="viewport-center-stage">
+      <!-- Viewport Top HUD Overlay -->
+      <div class="viewport-hud-top">
+        <div class="hud-location-badge">
+          <span id="hudCoordsDisplay" class="hud-coords">LAT: 0.67° | LON: 23.47°</span>
+          <span class="hud-tile-size">25.0 km Tile Footprint</span>
+        </div>
+
+        <!-- View Mode Switcher Pills -->
+        <div class="view-mode-switcher">
+          <button class="view-mode-btn active" id="btnView_3d" onclick="switchViewMode('3d')">3D Globe</button>
+          <button class="view-mode-btn" id="btnView_2d" onclick="switchViewMode('2d')">NASA 2D Map</button>
+          <button class="view-mode-btn" id="btnView_split" onclick="switchViewMode('split')">Split View</button>
+        </div>
+      </div>
+
+      <!-- 3D Three.js Planetary Globe Container -->
+      <div id="globeContainer"></div>
+
+      <!-- 2D Leaflet Map Container with NASA WMTS & Offline Grid -->
+      <div id="map2dContainer"></div>
+
+      <!-- Bottom Interaction Guide -->
+      <div class="viewport-hud-bottom">
+        Drag or click on the planetary globe to inspect any coordinate
+      </div>
+    </main>
+
+    <!-- Right Floating Panel: 6 Scientific Parameter Groups Data & Overview -->
+    <aside class="panel-right-details">
+      <!-- Location Overview Header Banner -->
+      <div id="locationOverviewBanner" class="target-summary-box location-overview-banner">
+        <div class="overview-header-top">
+          <span class="overview-chip-tag" id="overviewBodyBadge">LUNAR SURFACE TARGET</span>
+          <span class="overview-coords-readout" id="overviewLocationCoords">0.67° N, 23.47° E</span>
+        </div>
+        <h3 id="targetTitleDisplay" class="target-header-title">Apollo 11 Landing Site</h3>
+        <p id="targetStratigraphyDisplay" class="target-header-stratigraphy">
+          Imbrian high-titanium basalt plain with low local slope.
+        </p>
+        <div class="overview-meta-bar">
+          <div class="meta-cell">
+            <span class="meta-label">Region / Basin</span>
+            <span class="meta-value" id="overviewLocationRegion">Mare Tranquillitatis</span>
+          </div>
+          <div class="meta-cell">
+            <span class="meta-label">Elevation / Relief</span>
+            <span class="meta-value" id="overviewLocationElevation">-1.42 km (Relief 145 m)</span>
+          </div>
+        </div>
+        <button id="btnOverviewFindAnalogs" class="btn-overview-find" onclick="openComparisonDrawer()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>Find Earth Analogs for this Location</span>
+        </button>
+      </div>
+
+      <!-- 6 Scientific Parameter Groups -->
+      <div class="environmental-groups-container">
+        <!-- 1. Terrain Geomorphometry -->
+        <div class="param-group-card param-card-enhanced">
+          <div class="param-group-header">
+            <div>
+              <span class="param-group-title">⛰️ 1. Terrain Geomorphometry</span>
+              <div class="param-group-desc">Topographic slope, terrain roughness index (TRI), and local relief metrics.</div>
+            </div>
+            <span id="badgeTerrain" class="group-status-badge badge-valid">✓ OBSERVED</span>
+          </div>
+          <div class="metrics-subgrid">
+            <div class="metric-item">
+              <div class="metric-lbl">Mean Slope</div>
+              <div class="metric-num" id="metricSlope">4.12°</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">Roughness (TRI)</div>
+              <div class="metric-num" id="metricTRI">12.3 m</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">Local Relief</div>
+              <div class="metric-num" id="metricRelief">145 m</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">Spatial Res.</div>
+              <div class="metric-num" id="metricRes">~118 m</div>
+            </div>
+          </div>
+          <div class="param-source-tag">Source: LRO LOLA (Moon) • MGS MOLA (Mars) • NOAA ETOPO 2022 (Earth)</div>
+        </div>
+
+        <!-- 2. Mineralogy & Composition -->
+        <div class="param-group-card param-card-enhanced">
+          <div class="param-group-header">
+            <div>
+              <span class="param-group-title">🔬 2. Mineralogy & Composition</span>
+              <div class="param-group-desc">Spectroscopic abundance of iron and titanium oxides in surface regolith.</div>
+            </div>
+            <span id="badgeMineral" class="group-status-badge badge-unobserved">⚠️ N/A</span>
+          </div>
+          <div class="metrics-subgrid">
+            <div class="metric-item">
+              <div class="metric-lbl">Iron Oxide (FeO)</div>
+              <div class="metric-num" id="metricFeO">N/A (Uncalibrated)</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">Titanium Oxide (TiO₂)</div>
+              <div class="metric-num" id="metricTiO2">N/A (Uncalibrated)</div>
+            </div>
+          </div>
+          <div class="param-source-tag">Source: Clementine UVVIS / CRISM (Mars) / GLiM Lithology (Earth)</div>
+        </div>
+
+        <!-- 3. Thermophysical Environment -->
+        <div class="param-group-card param-card-enhanced">
+          <div class="param-group-header">
+            <div>
+              <span class="param-group-title">🌡️ 3. Thermophysical Environment</span>
+              <div class="param-group-desc">Diurnal surface land temperature extrema and radiative thermal regime.</div>
+            </div>
+            <span id="badgeThermal" class="group-status-badge badge-unobserved">⚠️ N/A</span>
+          </div>
+          <div class="metrics-subgrid">
+            <div class="metric-item">
+              <div class="metric-lbl">Daytime LST</div>
+              <div class="metric-num" id="metricDayTemp">N/A</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">Nighttime LST</div>
+              <div class="metric-num" id="metricNightTemp">N/A</div>
+            </div>
+          </div>
+          <div class="param-source-tag">Source: Diviner Lunar Radiometer • THEMIS IR • MODIS Terra/Aqua LST</div>
+        </div>
+
+        <!-- 4. Water, Ice & Volatiles -->
+        <div class="param-group-card param-card-enhanced">
+          <div class="param-group-header">
+            <div>
+              <span class="param-group-title">💧 4. Water, Ice & Volatiles</span>
+              <div class="param-group-desc">Hydrogen-proxy water equivalent hydrogen (WEH) and permanently shadowed regions.</div>
+            </div>
+            <span id="badgeVolatiles" class="group-status-badge badge-valid">✓ OBSERVED</span>
+          </div>
+          <div class="metrics-subgrid">
+            <div class="metric-item">
+              <div class="metric-lbl">WEH (H-Proxy)</div>
+              <div class="metric-num" id="metricWEH">0.13 wt%</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">PSR Area Fraction</div>
+              <div class="metric-num" id="metricPSR">0.0%</div>
+            </div>
+          </div>
+          <div class="param-source-tag">Source: Lunar Prospector Neutron Spectrometer (LP-NS) • Odyssey GRS • JRC Water</div>
+        </div>
+
+        <!-- 5. Geological Context & Landforms -->
+        <div class="param-group-card param-card-enhanced">
+          <div class="param-group-header">
+            <div>
+              <span class="param-group-title">💥 5. Geological Context</span>
+              <div class="param-group-desc">Stratigraphic chronometry, cumulative crater density N(1), and lithological setting.</div>
+            </div>
+            <span id="badgeGeology" class="group-status-badge badge-valid">✓ OBSERVED</span>
+          </div>
+          <div class="metrics-subgrid">
+            <div class="metric-item">
+              <div class="metric-lbl">Crater Density N(1)</div>
+              <div class="metric-num" id="metricCraterN1">2.41e-4</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">Chronometric Unit</div>
+              <div class="metric-num" id="metricUnit">Imbrian Basalt</div>
+            </div>
+          </div>
+          <div class="param-source-tag">Source: USGS Unified Lunar Geologic Map • Global Martian Geologic Maps</div>
+        </div>
+
+        <!-- 6. Atmospheric & Space Environment -->
+        <div class="param-group-card param-card-enhanced">
+          <div class="param-group-header">
+            <div>
+              <span class="param-group-title">🌌 6. Atmospheric & Space Environment</span>
+              <div class="param-group-desc">Planetary boundary layer pressure, gas composition, and solar radiation flux.</div>
+            </div>
+            <span id="badgeAtmo" class="group-status-badge badge-valid">✓ CONTEXT</span>
+          </div>
+          <div class="metrics-subgrid">
+            <div class="metric-item">
+              <div class="metric-lbl">Surface Pressure</div>
+              <div class="metric-num" id="metricAtmPressure">&lt; 10⁻¹² bar</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">Dominant Gases</div>
+              <div class="metric-num" id="metricAtmGas">Exosphere (He, Ne, H₂)</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">Solar Irradiance</div>
+              <div class="metric-num" id="metricSolarFlux">1,361 W/m² (1.0 AU)</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-lbl">Radiation Shielding</div>
+              <div class="metric-num" id="metricRadiation">Unshielded (Cosmic / Solar)</div>
+            </div>
+          </div>
+          <div class="param-source-tag">Source: NASA Planetary Fact Sheets • PDS Planetary Atmospheres Node</div>
+        </div>
+      </div>
+
+      <!-- Scientific Safeguards Callout -->
+      <div class="safeguards-callout-box">
+        <strong>Scientific Safeguards Active:</strong> <span id="safeguardValidCount">3 of 5</span> core parameter groups observed for this tile. Unobserved groups are marked N/A and excluded from composite similarity calculations.
+      </div>
+
+      <!-- Find Earth Analogs Action CTA -->
+      <button class="btn-find-analogs" onclick="openComparisonDrawer()">
+        <span>FIND EARTH ANALOGS</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </aside>
+
+  </section>
+
+  <!-- ========================================================================
+       PART B: Phase 2 Scientific Earth Analogs Comparison Research Console
+       ======================================================================== -->
+  <section id="comparisonDrawer" class="comparison-console-overlay hidden">
+    <!-- Console Top Bar -->
+    <div class="console-top-bar">
+      <div class="console-target-badge">
+        <div class="target-flag-chip" id="consoleTargetBodyBadge">MOON TARGET</div>
+        <div class="target-title-wrap">
+          <span class="target-site-headline" id="consoleTargetName">Apollo 11 Landing Site</span>
+          <span class="target-coords-mono" id="consoleTargetCoords">0.67° N, 23.47° E</span>
+        </div>
+        <div class="tile-footprint-chip">
+          <span>25.0 km Equal-Area Tile</span>
+          <span class="footprint-divider">|</span>
+          <span id="consoleTargetResolutions">LOLA ~118 m • LP-NS ~43 km</span>
+        </div>
+      </div>
+
+      <div class="console-top-actions">
+        <button class="btn-return-exploration" onclick="closeComparisonDrawer()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Return to 3D Planetary Exploration</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 3-Column Planetary Research Console Grid -->
+    <div class="console-workspace-grid">
+      
+      <!-- COLUMN 1: Telemetry & Similarity Configuration (330px) -->
+      <aside class="console-col-config">
+        <!-- Target Coverage Summary Box -->
+        <div class="console-card">
+          <div class="panel-section-title">
+            <span>Target Observation Coverage</span>
+          </div>
+          <div class="target-obs-summary">
+            <div class="obs-metric-large">
+              <span id="consoleObsCount">4</span><span class="obs-metric-sub">/ 5 Groups</span>
+            </div>
+            <div class="obs-status-pills" id="consoleTargetGroupPills"></div>
+          </div>
+          <div class="coverage-rule-note">
+            Multi-mission orbital remote-sensing datasets provide verified coverage across the active parameter groups.
+          </div>
+        </div>
+
+        <!-- Similarity Weights Configuration Box -->
+        <div class="console-card">
+          <div class="panel-section-title">
+            <span>Similarity Weights Configuration</span>
+          </div>
+          
+          <div class="slider-group">
+            <div class="slider-labels-row">
+              <span>1. Terrain Geomorphometry</span>
+              <span id="effWTerrain" class="weight-eff-badge">Raw: 25 | Eff: 25.0%</span>
+            </div>
+            <input type="range" id="wTerrain" min="0" max="100" value="25" oninput="updateEffectiveWeightsDisplay()" />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-labels-row">
+              <span>2. Mineralogy & Composition</span>
+              <span id="effWMineral" class="weight-eff-badge">Raw: 20 | Eff: 20.0%</span>
+            </div>
+            <input type="range" id="wMineral" min="0" max="100" value="20" oninput="updateEffectiveWeightsDisplay()" />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-labels-row">
+              <span>3. Thermophysical Environment</span>
+              <span id="effWThermal" class="weight-eff-badge">Raw: 20 | Eff: 20.0%</span>
+            </div>
+            <input type="range" id="wThermal" min="0" max="100" value="20" oninput="updateEffectiveWeightsDisplay()" />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-labels-row">
+              <span>4. Water, Ice & Volatiles</span>
+              <span id="effWWater" class="weight-eff-badge">Raw: 15 | Eff: 15.0%</span>
+            </div>
+            <input type="range" id="wWater" min="0" max="100" value="15" oninput="updateEffectiveWeightsDisplay()" />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-labels-row">
+              <span>5. Geological Context</span>
+              <span id="effWGeology" class="weight-eff-badge">Raw: 20 | Eff: 20.0%</span>
+            </div>
+            <input type="range" id="wGeology" min="0" max="100" value="20" oninput="updateEffectiveWeightsDisplay()" />
+          </div>
+
+          <!-- Minimum Valid Coverage Threshold Safeguard -->
+          <div class="safeguard-slider-box">
+            <div class="slider-labels-row">
+              <span style="color: #38bdf8; font-weight: 600;">Min. Valid Coverage Safeguard</span>
+              <span id="valDrawerMinCov" style="color: #38bdf8; font-weight: 700; font-family: var(--font-mono);">60%</span>
+            </div>
+            <input type="range" id="drawerMinCov" min="20" max="100" step="5" value="60" oninput="document.getElementById('valDrawerMinCov').textContent = this.value + '%'" />
+            <div class="safeguard-help-text">
+              Comparisons covering fewer mutual groups than this threshold are strictly flagged as Insufficient Coverage.
+            </div>
+          </div>
+
+          <button class="btn-action-recalc" id="btnRunMatchInDrawer" onclick="runAnalogMatch()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>Re-Evaluate Global Analogs</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- COLUMN 2: Ranked Global Earth Analogs (Flex) -->
+      <section class="console-col-rankings">
+        <div class="rankings-header-row">
+          <div>
+            <h3 class="rankings-headline">Ranked Global Earth Analogs</h3>
+            <span class="rankings-subhead">Evaluating 128 Characterized Terrestrial Candidate Cells</span>
+          </div>
+          <div id="resultsCountBadge" class="results-count-chip">5 Candidates Returned</div>
+        </div>
+
+        <div id="drawerAnalogsList" class="analogs-card-stack">
+          <!-- Populated dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- COLUMN 3: Deep Inspection, 5-Axis Radar Chart & Terrestrial Map (430px) -->
+      <aside class="console-col-inspection">
+        <!-- 5-Axis Radar Profile Box -->
+        <div class="console-card">
+          <div class="panel-section-title">
+            <span>5-Axis Planetary Radar Profile</span>
+            <span id="radarCandidateTag" class="radar-candidate-pill">Candidate #1</span>
+          </div>
+          <div class="radar-canvas-wrap">
+            <canvas id="drawerRadarChart"></canvas>
+          </div>
+          <div id="drawerRadarPills" class="radar-pills"></div>
+          <div class="radar-scientific-note">
+            Missing parameter groups are rendered as polygonal gaps and strictly excluded from composite similarity calculations.
+          </div>
+        </div>
+
+        <!-- Five Scientific Parameter Groups Inspection Matrix -->
+        <div class="console-card">
+          <div class="panel-section-title">
+            <span>Five Parameter Groups Comparison Matrix</span>
+          </div>
+          <div id="candidateGroupsMatrix" class="groups-inspection-matrix">
+            <!-- Populated dynamically with side-by-side Target vs Candidate data -->
+          </div>
+        </div>
+
+        <!-- Global Earth Analog Map -->
+        <div class="console-card">
+          <div class="panel-section-title">
+            <span>Global Terrestrial Candidates Map</span>
+          </div>
+          <div id="earthMap"></div>
+        </div>
+      </aside>
+
+    </div>
+  </section>
+
+  <!-- TerraTwin Modular Scripts -->
+  <script src="/static/js/globe.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
