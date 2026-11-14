@@ -90,6 +90,9 @@ class PlanetaryGlobe {
     // 9. Coordinate Marker Beacon (Attached directly to globeMesh)
     this.setupMarker();
 
+    // 9b. Landing Sites Group (Attached directly to globeMesh)
+    this.setupLandingSitesGroup();
+
     // 10. Raycasting for Accurate Lat/Lon Selection
     if (this.options.interactive) {
       this.setupRaycaster();
@@ -234,6 +237,82 @@ class PlanetaryGlobe {
     this.globeMesh.add(this.markerGroup);
   }
 
+  setupLandingSitesGroup() {
+    this.landingSitesGroup = new THREE.Group();
+    this.globeMesh.add(this.landingSitesGroup);
+    this.landingSiteMeshes = [];
+    this.landingSiteRings = [];
+  }
+
+  setLandingSites(sites = []) {
+    if (!this.landingSitesGroup) return;
+
+    // Clear old landing site meshes
+    while (this.landingSitesGroup.children.length > 0) {
+      const child = this.landingSitesGroup.children[0];
+      this.landingSitesGroup.remove(child);
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) {
+        if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+        else child.material.dispose();
+      }
+    }
+    this.landingSiteMeshes = [];
+    this.landingSiteRings = [];
+
+    sites.forEach((site) => {
+      const siteGroup = new THREE.Group();
+      const localPos = this.latLonToVector3(site.lat, site.lon, this.radius);
+      siteGroup.position.copy(localPos);
+
+      const normal = localPos.clone().normalize();
+      siteGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+
+      // Color scheme based on status
+      let pinColor = 0x38bdf8;
+      if (site.status === 'certified' || site.safe) pinColor = 0x10b981; // Green
+      else if (site.status === 'historical') pinColor = 0xf59e0b; // Gold
+      else if (site.status === 'active') pinColor = 0x00f0ff; // Neon cyan
+
+      // Glowing Core Sphere
+      const coreGeo = new THREE.SphereGeometry(0.038, 16, 16);
+      const coreMat = new THREE.MeshBasicMaterial({ color: pinColor });
+      const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+      coreMesh.position.y = 0.045;
+      coreMesh.userData = { site: site, isLandingSite: true };
+      siteGroup.add(coreMesh);
+
+      // Vertical stem
+      const stemGeo = new THREE.CylinderGeometry(0.005, 0.005, 0.07, 8);
+      stemGeo.translate(0, 0.035, 0);
+      const stemMat = new THREE.MeshBasicMaterial({ color: pinColor, opacity: 0.85, transparent: true });
+      const stemMesh = new THREE.Mesh(stemGeo, stemMat);
+      stemMesh.userData = { site: site, isLandingSite: true };
+      siteGroup.add(stemMesh);
+
+      // Pulsing Base Ring
+      const ringGeo = new THREE.RingGeometry(0.035, 0.065, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: pinColor,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.rotation.x = Math.PI / 2;
+      ringMesh.userData = { phase: Math.random() * Math.PI, site: site, isLandingSite: true };
+      siteGroup.add(ringMesh);
+      this.landingSiteRings.push(ringMesh);
+
+      // Register clickable/hoverable meshes
+      this.landingSiteMeshes.push(coreMesh, stemMesh, ringMesh);
+
+      this.landingSitesGroup.add(siteGroup);
+    });
+  }
+
   setupRaycaster() {
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
@@ -242,6 +321,59 @@ class PlanetaryGlobe {
 
     dom.addEventListener('mousedown', (e) => {
       mouseDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    dom.addEventListener('mousemove', (e) => {
+      const rect = dom.getBoundingClientRect();
+      this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+
+      // 1. Check landing site beacon hover
+      let hoveredSite = null;
+      if (this.landingSiteMeshes && this.landingSiteMeshes.length > 0) {
+        const siteHits = this.raycaster.intersectObjects(this.landingSiteMeshes, false);
+        if (siteHits.length > 0) {
+          hoveredSite = siteHits[0].object.userData.site;
+        }
+      }
+
+      // 2. Check globe surface hover
+      const intersects = this.raycaster.intersectObject(this.globeMesh, false);
+      if (intersects.length > 0) {
+        const hit = intersects[0];
+        const localPoint = this.globeMesh.worldToLocal(hit.point.clone());
+        const coords = this.vector3ToLatLon(localPoint);
+
+        // Convert world hit point to screen coordinates
+        const projected = hit.point.clone().project(this.camera);
+        const screenX = (projected.x * 0.5 + 0.5) * rect.width + rect.left;
+        const screenY = (-(projected.y * 0.5) + 0.5) * rect.height + rect.top;
+
+        if (typeof this.options.onPointerHover === 'function') {
+          this.options.onPointerHover({
+            lat: coords.lat,
+            lon: coords.lon,
+            screenX: screenX,
+            screenY: screenY,
+            clientX: e.clientX,
+            clientY: e.clientY,
+            body: this.currentBody,
+            landingSite: hoveredSite
+          });
+        }
+      } else {
+        if (typeof this.options.onPointerHover === 'function') {
+          this.options.onPointerHover(null);
+        }
+      }
+    });
+
+    dom.addEventListener('mouseleave', () => {
+      if (typeof this.options.onPointerHover === 'function') {
+        this.options.onPointerHover(null);
+      }
     });
 
     dom.addEventListener('click', (e) => {
@@ -253,8 +385,28 @@ class PlanetaryGlobe {
       this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
       this.raycaster.setFromCamera(this.mouse, this.camera);
-      const intersects = this.raycaster.intersectObject(this.globeMesh, false);
 
+      // Check if clicked directly on a landing site marker
+      if (this.landingSiteMeshes && this.landingSiteMeshes.length > 0) {
+        const siteHits = this.raycaster.intersectObjects(this.landingSiteMeshes, false);
+        if (siteHits.length > 0) {
+          const site = siteHits[0].object.userData.site;
+          if (site) {
+            this.setMarker(site.lat, site.lon);
+            this.flyTo(site.lat, site.lon, 850);
+            if (typeof this.options.onLandingSiteSelect === 'function') {
+              this.options.onLandingSiteSelect(site);
+            }
+            if (typeof this.options.onLocationSelect === 'function') {
+              this.options.onLocationSelect(site.lat, site.lon);
+            }
+            return;
+          }
+        }
+      }
+
+      // Regular planet surface hit
+      const intersects = this.raycaster.intersectObject(this.globeMesh, false);
       if (intersects.length > 0) {
         const hit = intersects[0];
         // Convert world intersection point to local coordinates inside globeMesh
@@ -448,6 +600,17 @@ class PlanetaryGlobe {
       ring.material.opacity = opacity;
     });
 
+    // Animate landing site pulsing rings
+    if (this.landingSiteRings && this.landingSiteRings.length > 0) {
+      this.landingSiteRings.forEach((ring) => {
+        const t = (sec * 1.5 + ring.userData.phase) % 1.5;
+        const scale = 1.0 + t * 1.8;
+        const opacity = Math.max(0, 0.8 * (1.0 - t / 1.5));
+        ring.scale.set(scale, scale, 1.0);
+        ring.material.opacity = opacity;
+      });
+    }
+
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -594,147 +757,5 @@ function createShowcaseGlobe(canvasId, body) {
   };
 }
 
-/**
- * Realistic 3D Curved Earth Horizon for Opening Intro Screen
- * Renders an orbital viewpoint of Earth's curved limb with atmospheric glow
- * and slow cinematic drift against deep space.
- */
-function createIntroEarthHorizon(canvasId) {
-  const canvas = typeof canvasId === 'string' ? document.getElementById(canvasId) : canvasId;
-  if (!canvas || typeof THREE === 'undefined') return null;
-
-  const width = canvas.clientWidth || window.innerWidth;
-  const height = canvas.clientHeight || window.innerHeight;
-
-  const scene = new THREE.Scene();
-
-  const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
-  camera.position.set(0, 0, 4.5);
-
-  const renderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-    antialias: true,
-    alpha: true,
-    powerPreference: 'high-performance'
-  });
-  renderer.setSize(width, height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.35;
-
-  // Illumination
-  const hemi = new THREE.HemisphereLight(0x7292b8, 0x050b14, 0.55);
-  scene.add(hemi);
-
-  const sun = new THREE.DirectionalLight(0xfffef5, 2.8);
-  sun.position.set(6, 4, 3);
-  scene.add(sun);
-
-  const fill = new THREE.DirectionalLight(0x38bdf8, 0.45);
-  fill.position.set(-5, -2, -2);
-  scene.add(fill);
-
-  // Large Earth Sphere positioned below camera so top curved horizon fills lower half
-  const earthRadius = 14.0;
-  const earthCenterY = -13.2;
-
-  const loader = new THREE.TextureLoader();
-  const earthTex = loader.load('/static/textures/earth.jpg');
-  earthTex.wrapS = THREE.RepeatWrapping;
-  earthTex.encoding = THREE.sRGBEncoding;
-
-  const earthGeo = new THREE.SphereGeometry(earthRadius, 96, 96);
-  const earthMat = new THREE.MeshStandardMaterial({
-    map: earthTex,
-    roughness: 0.70,
-    metalness: 0.05
-  });
-  const earthMesh = new THREE.Mesh(earthGeo, earthMat);
-  earthMesh.position.set(0, earthCenterY, 0);
-  earthMesh.rotation.x = 0.22; // slight orbital inclination tilt
-  scene.add(earthMesh);
-
-  // Earth Clouds Layer
-  const cloudTex = loader.load('/static/textures/earth_clouds.png');
-  cloudTex.wrapS = THREE.RepeatWrapping;
-  cloudTex.encoding = THREE.sRGBEncoding;
-
-  const cloudGeo = new THREE.SphereGeometry(earthRadius + 0.04, 96, 96);
-  const cloudMat = new THREE.MeshStandardMaterial({
-    map: cloudTex,
-    transparent: true,
-    opacity: 0.65,
-    roughness: 0.95,
-    depthWrite: false
-  });
-  const cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
-  cloudMesh.position.set(0, earthCenterY, 0);
-  cloudMesh.rotation.x = 0.22;
-  scene.add(cloudMesh);
-
-  // Atmospheric Rim Glow Shader on the Horizon
-  const atmosGeo = new THREE.SphereGeometry(earthRadius + 0.12, 64, 64);
-  const atmosMat = new THREE.ShaderMaterial({
-    vertexShader: `
-      varying vec3 vNormal;
-      varying vec3 vPosition;
-      void main() {
-        vNormal = normalize(normalMatrix * normal);
-        vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      varying vec3 vNormal;
-      varying vec3 vPosition;
-      void main() {
-        vec3 viewDir = normalize(-vPosition);
-        float rim = 1.0 - max(0.0, dot(vNormal, viewDir));
-        float intensity = pow(rim, 3.2) * 1.1;
-        vec3 glowColor = vec3(0.22, 0.74, 0.97); // Pale cyan atmospheric ozone glow
-        gl_FragColor = vec4(glowColor, intensity * 0.85);
-      }
-    `,
-    blending: THREE.AdditiveBlending,
-    side: THREE.BackSide,
-    transparent: true,
-    depthWrite: false
-  });
-  const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
-  atmosMesh.position.set(0, earthCenterY, 0);
-  atmosMesh.rotation.x = 0.22;
-  scene.add(atmosMesh);
-
-  // Handle Resize
-  function onResize() {
-    if (!canvas) return;
-    const w = canvas.clientWidth || window.innerWidth;
-    const h = canvas.clientHeight || window.innerHeight;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h);
-  }
-  window.addEventListener('resize', onResize);
-
-  let animId;
-  function animate() {
-    animId = requestAnimationFrame(animate);
-    earthMesh.rotation.y += 0.00045;
-    cloudMesh.rotation.y += 0.00062;
-    renderer.render(scene, camera);
-  }
-  animate();
-
-  return {
-    destroy: () => {
-      if (animId) cancelAnimationFrame(animId);
-      window.removeEventListener('resize', onResize);
-      renderer.dispose();
-    },
-    onResize
-  };
-}
-
 window.PlanetaryGlobe = PlanetaryGlobe;
 window.createShowcaseGlobe = createShowcaseGlobe;
-window.createIntroEarthHorizon = createIntroEarthHorizon;
