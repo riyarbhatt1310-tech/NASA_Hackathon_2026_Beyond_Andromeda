@@ -1,13 +1,13 @@
-# TerraTwin: Multi-Parameter Planetary Analog Discovery Platform
+# Asterix: Multi-Parameter Planetary Analog Discovery Platform
 
-[![TerraTwin CI](https://github.com/riyarbhatt1310-tech/NASA_Hackathon_2026_Beyond_Andromeda/actions/workflows/ci.yml/badge.svg)](https://github.com/riyarbhatt1310-tech/NASA_Hackathon_2026_Beyond_Andromeda/actions)
+[![Asterix CI](https://github.com/riyarbhatt1310-tech/NASA_Hackathon_2026_Beyond_Andromeda/actions/workflows/ci.yml/badge.svg)](https://github.com/riyarbhatt1310-tech/NASA_Hackathon_2026_Beyond_Andromeda/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com)
 [![Three.js](https://img.shields.io/badge/Three.js-r128-black.svg)](https://threejs.org/)
 [![NASA Space Apps](https://img.shields.io/badge/NASA%20Space%20Apps-2026-critical.svg)](https://www.spaceappschallenge.org/)
 
-**TerraTwin** is an end-to-end planetary exploration and comparative planetology platform that connects extraterrestrial targets on the **Moon** and **Mars** with their highest-fidelity **Earth analogs**. By harmonizing multi-mission orbital remote sensing data across five distinct domains, TerraTwin enables mission planners, geologists, and planetary scientists to identify terrestrial field sites that mirror the geomorphology, mineralogy, thermophysics, volatile proxies, and geological contexts of landing zones across our solar system.
+**Asterix** is an end-to-end planetary exploration and comparative planetology platform that connects extraterrestrial targets on the **Moon** and **Mars** with their highest-fidelity **Earth analogs**. By harmonizing multi-mission orbital remote sensing data across five distinct domains, Asterix enables mission planners, geologists, and planetary scientists to identify terrestrial field sites that mirror the geomorphology, mineralogy, thermophysics, volatile proxies, and geological contexts of landing zones across our solar system.
 
 ---
 

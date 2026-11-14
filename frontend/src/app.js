@@ -1188,7 +1188,7 @@ function renderExtractedTileData(tile) {
 // ============================================================================
 function openComparisonDrawer() {
   if (state.currentBody === 'earth') {
-    alert('TerraTwin compares extraterrestrial targets (Moon or Mars) to Earth analogs. Please select Moon or Mars.');
+    alert('Asterix compares extraterrestrial targets (Moon or Mars) to Earth analogs. Please select Moon or Mars.');
     return;
   }
 

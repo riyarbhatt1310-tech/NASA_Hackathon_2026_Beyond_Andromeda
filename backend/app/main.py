@@ -38,7 +38,7 @@ from src.data_ingestion.geologic_units import GeologicUnitAggregator
 
 # Initialize FastAPI App
 app = FastAPI(
-    title="TerraTwin: Multi-Parameter Planetary Analog Discovery Platform",
+    title="Asterix: Multi-Parameter Planetary Analog Discovery Platform",
     description="Scientific 5-group planetary feature extraction and comparative similarity engine across Earth, Moon, and Mars.",
     version="1.0.0",
 )
@@ -266,7 +266,7 @@ def health_check() -> Dict[str, Any]:
 
     return {
         "status": "healthy",
-        "service": "TerraTwin Multi-Parameter Planetary Analog Discovery API",
+        "service": "Asterix Multi-Parameter Planetary Analog Discovery API",
         "version": "1.0.0",
         "planetary_bodies": ["moon", "mars", "earth"],
         "parameter_groups": [
@@ -461,9 +461,9 @@ else:
 
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
-    """Serves the interactive TerraTwin planetary analog dashboard."""
+    """Serves the interactive Asterix planetary analog dashboard."""
     for html_candidate in [FRONTEND_DIR / "index.html", BASE_DIR / "src" / "api" / "static" / "index.html"]:
         if html_candidate.exists():
             with open(html_candidate, "r", encoding="utf-8") as f:
                 return f.read()
-    return HTMLResponse("<h2>TerraTwin API Server Running. Dashboard HTML not found.</h2>")
+    return HTMLResponse("<h2>Asterix API Server Running. Dashboard HTML not found.</h2>")
