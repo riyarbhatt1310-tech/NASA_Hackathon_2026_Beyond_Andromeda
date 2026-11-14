@@ -18,7 +18,11 @@ from src.data_ingestion.mars_tes_temp import MarsTesTempReader
 from src.data_ingestion.earth_modis import ModisLSTReader
 from src.processing.tile_extractor import PlanetaryTileExtractor
 
-RAW_DIR = Path(__file__).parent.parent / "data" / "raw"
+RAW_DIR = (
+    Path(__file__).resolve().parents[2] / "data" / "raw"
+    if len(Path(__file__).resolve().parents) > 2 and (Path(__file__).resolve().parents[2] / "data").exists()
+    else Path(__file__).resolve().parent.parent / "data" / "raw"
+)
 
 # Real file paths
 MOON_DIVINER_DAY = RAW_DIR / "moon" / "thermal" / "diviner_day.tif"

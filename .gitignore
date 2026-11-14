@@ -1,4 +1,8 @@
-# Python bytecode and caches
+# ==============================================================================
+# TerraTwin Repository .gitignore
+# ==============================================================================
+
+# Python Bytecode, Caches & Coverage
 __pycache__/
 *.py[cod]
 *$py.class
@@ -6,15 +10,39 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+.tox/
+.nox/
 
-# Environments
+# Virtual Environments
 .env
-.venv
+.env.local
+.env.*.local
+*.env
+!.env.example
+.venv/
 env/
 venv/
 ENV/
+env.bak/
+venv.bak/
 
-# IDE / Editor configuration
+# Node.js & Frontend Build Outputs
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.npm
+.eslintcache
+
+# Sensitive Credentials & Cloud Keys
+credentials.json
+*service_account*.json
+*gee_key*.json
+*.pem
+*.key
+*.p12
+
+# IDEs, Editors & OS Files
 .vscode/
 .idea/
 *.swp
@@ -22,8 +50,9 @@ ENV/
 *~
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Raw planetary raster data files (too large for GitHub >100MB limit)
+# Large Raw Planetary Raster Datasets (> 100 MB GitHub limit)
 data/raw/
 *.img
 *.IMG
@@ -36,5 +65,7 @@ data/raw/
 *.tar.gz
 *.tgz
 
-# Scratch exploratory scripts
+# Scratch & Temporary Logs
 scratch/
+*.log
+*.tmp

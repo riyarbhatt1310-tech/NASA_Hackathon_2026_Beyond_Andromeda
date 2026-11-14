@@ -27,7 +27,11 @@ from src.data_ingestion.crater_catalog import PlanetaryCraterCatalog
 from src.data_ingestion.earth_impacts import EarthImpactCatalog
 from src.data_ingestion.geologic_units import GeologicUnitAggregator
 
-RAW_DIR = Path(__file__).parent.parent / "data" / "raw"
+RAW_DIR = (
+    Path(__file__).resolve().parents[2] / "data" / "raw"
+    if len(Path(__file__).resolve().parents) > 2 and (Path(__file__).resolve().parents[2] / "data").exists()
+    else Path(__file__).resolve().parent.parent / "data" / "raw"
+)
 
 
 @pytest.fixture(scope="module")

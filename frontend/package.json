@@ -1,0 +1,27 @@
+{
+  "name": "terratwin-frontend",
+  "version": "1.0.0",
+  "description": "TerraTwin: Multi-Parameter Planetary Analog Discovery Platform - Interactive 3D Cartography and Comparative Science Frontend",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "nasa",
+    "planetary-science",
+    "analog-discovery",
+    "threejs",
+    "webgl",
+    "leaflet",
+    "mars",
+    "moon",
+    "earth"
+  ],
+  "author": "TerraTwin Team",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
