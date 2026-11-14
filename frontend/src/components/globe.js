@@ -1,5 +1,5 @@
 /**
- * TerraTwin 3D Planetary Globe
+ * Asterix 3D Planetary Globe
  * Scientific rendering using NASA Blue Marble (Earth), LRO LOLA (Moon),
  * and USGS Viking (Mars) global mosaics.
  * Features realistic physical lighting, natural atmospheric scattering,

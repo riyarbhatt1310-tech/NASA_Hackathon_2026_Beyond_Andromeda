@@ -1,5 +1,5 @@
 /**
- * TerraTwin Planetary Exploration Application Controller
+ * Asterix Planetary Exploration Application Controller
  * Phase 2: Calibrated Planetary Visibility + Planetary Science Research Console
  * Handles Landing Screen transitions, 3D Globe & NASA 2D Map synchronization,
  * Live Multi-Parameter Extraction (/api/extract), and Global Earth Analog Matching (/api/match).
